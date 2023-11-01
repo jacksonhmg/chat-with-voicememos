@@ -31,14 +31,14 @@ import shutil
 
 load_dotenv()
 
-embeddings = OpenAIEmbeddings()
 
 # ... (rest of the code above)
 
-def create_vector_db_from_memos2(memo_files, st):
+def create_vector_db_from_memos2(memo_files, api_key, st):
 
     model = whisper.load_model("base")
     docs = []
+    embeddings = OpenAIEmbeddings(openai_api_key=api_key)
     
     total_files = len(memo_files)
     
