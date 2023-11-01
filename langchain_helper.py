@@ -8,6 +8,8 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
+from langchain.document_loaders import TextLoader
+from langchain.text_splitter import CharacterTextSplitter
 
 
 import numpy as np
@@ -32,19 +34,19 @@ load_dotenv()
 embeddings = OpenAIEmbeddings()
 
 
-def create_vector_db_from_memos(memo_files) -> FAISS:
-    model = whisper.load_model("base")
+# def create_vector_db_from_memos(memo_files) -> FAISS:
+#     model = whisper.load_model("base")
 
-    for file in memo_files:
-        result = model.transcribe(file)
-        loader = TextLoader(file)
-        transcript = loader.load()
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        docs = text_splitter.split_documents(transcript)
+#     for file in memo_files:
+#         result = model.transcribe(file)
+#         loader = TextLoader(file)
+#         transcript = loader.load()
+#         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+#         docs = text_splitter.split_documents(transcript)
 
 
-    db = FAISS.from_documents(docs, embeddings)
-    return db
+#     db = FAISS.from_documents(docs, embeddings)
+#     return db
 
 
 def create_vector_db_from_memos2(memo_files):
@@ -61,13 +63,26 @@ def create_vector_db_from_memos2(memo_files):
         result = model.transcribe(temp_file_path)
         print(result["text"])
 
-        faiss = FAISS.from_texts(result["text"], embeddings)
+        with tempfile.NamedTemporaryFile(mode='w') as f:
+            f.write(result["text"])
+            f.flush()
+            
+            loader = TextLoader(f.name)
+            documents = loader.load()
+
+
+        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+        docs = text_splitter.split_documents(documents)
+
+        db = FAISS.from_documents(docs, embeddings)
+
+        #faiss = FAISS.from_texts(result["text"], embeddings)
 
 
         # Optionally delete the temporary file if you don't need it anymore
         os.remove(temp_file_path)
 
-    return faiss
+    return db
 
 
 def create_document(text):
