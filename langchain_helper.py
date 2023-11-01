@@ -61,10 +61,13 @@ def create_vector_db_from_memos2(memo_files):
         result = model.transcribe(temp_file_path)
         print(result["text"])
 
+        faiss = FAISS.from_texts(result["text"], embeddings)
+
+
         # Optionally delete the temporary file if you don't need it anymore
         os.remove(temp_file_path)
 
-
+    return faiss
 
 
 def create_document(text):
@@ -78,7 +81,7 @@ def get_response_from_query(db, query, openai_api_key, k=4):
     docs = db.similarity_search(query, k=k)
     docs_page_content = " ".join([d.page_content for d in docs])
 
-    llm = OpenAI(model="gpt-3.5-turbo", openai_api_key=openai_api_key)
+    llm = OpenAI(model="text-davinci-003", openai_api_key=openai_api_key)
 
     prompt = PromptTemplate(
         input_variables=["question", "docs"],
