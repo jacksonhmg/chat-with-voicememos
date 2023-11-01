@@ -78,10 +78,12 @@ def create_document(text):
 def get_response_from_query(db, query, openai_api_key, k=4):
     # text-danvinci can handle 4097 tokens
 
-    docs = db.similarity_search(query, k=k)
+    docs = db.similarity_search(query)
     docs_page_content = " ".join([d.page_content for d in docs])
 
     llm = OpenAI(model="text-davinci-003", openai_api_key=openai_api_key)
+
+
 
     prompt = PromptTemplate(
         input_variables=["question", "docs"],
@@ -98,6 +100,9 @@ def get_response_from_query(db, query, openai_api_key, k=4):
     )
 
     chain = LLMChain(llm=llm, prompt=prompt)
+
+    print("Query:", query)
+    print("Docs:", docs_page_content)
 
     response = chain.run(question=query, docs=docs_page_content)
     response = response.replace("\n", "")
