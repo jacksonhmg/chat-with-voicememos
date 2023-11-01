@@ -9,8 +9,23 @@ from langchain.chains import LLMChain
 from langchain.vectorstores import FAISS
 from dotenv import load_dotenv
 
+
+import numpy as np
+import io
+
+
 import os
+import tempfile
 import whisper
+
+import librosa
+import numpy as np
+
+from langchain.document_loaders import TextLoader
+
+import tempfile
+import shutil
+
 
 load_dotenv()
 
@@ -20,13 +35,40 @@ embeddings = OpenAIEmbeddings()
 def create_vector_db_from_memos(memo_files) -> FAISS:
     model = whisper.load_model("base")
 
-    for audio_file in memo_files:
-        result = model.transcribe(audio_file)
+    for file in memo_files:
+        result = model.transcribe(file)
+        loader = TextLoader(file)
+        transcript = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        docs = text_splitter.split_documents(result)
+        docs = text_splitter.split_documents(transcript)
 
-        db = FAISS.from_documents(docs, embeddings)
-        return db
+
+    db = FAISS.from_documents(docs, embeddings)
+    return db
+
+
+def create_vector_db_from_memos2(memo_files):
+    model = whisper.load_model("base")
+
+    for uploaded_file in memo_files:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
+            # Write the content of the uploaded file to the temporary file
+            shutil.copyfileobj(uploaded_file, temp_file)
+            temp_file_path = temp_file.name
+
+        # Transcribe using the path to the temporary file
+        result = model.transcribe(temp_file_path)
+        print(result["text"])
+
+        # Optionally delete the temporary file if you don't need it anymore
+        os.remove(temp_file_path)
+
+
+
+
+def create_document(text):
+    return {"page_content": text}
 
 
 

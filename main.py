@@ -16,6 +16,7 @@ with st.sidebar:
         memo_files = st.file_uploader(
             label="Upload all your memo files",
             accept_multiple_files=True,
+            key="memo_files",
         )
         query = st.sidebar.text_area(
             label="Ask a question about your memos",
@@ -30,10 +31,10 @@ if 'db' not in st.session_state:
 
 # Create the database only if memo files are uploaded and the database does not exist
 if memo_files and api_key and not st.session_state.db:
-    st.session_state.db = lch.create_vector_db_from_memos(memo_files)
+    st.session_state.db = lch.create_vector_db_from_memos2(memo_files)
 
-# Query submission and response
-if query and st.session_state.db:
-    response = lch.get_response_from_query(st.session_state.db, query, api_key)
-    st.subheader("Answer:")
-    st.text(textwrap.fill(response, 80))
+# # Query submission and response
+# if query and st.session_state.db:
+#     response = lch.get_response_from_query(st.session_state.db, query, api_key)
+#     st.subheader("Answer:")
+#     st.text(textwrap.fill(response, 80))
