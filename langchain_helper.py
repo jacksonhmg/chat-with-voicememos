@@ -50,37 +50,34 @@ embeddings = OpenAIEmbeddings()
 
 
 def create_vector_db_from_memos2(memo_files):
+
     model = whisper.load_model("base")
+    docs = []
 
     for uploaded_file in memo_files:
-        # Create a temporary file
+
+        # Transcribe audio file
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
-            # Write the content of the uploaded file to the temporary file
             shutil.copyfileobj(uploaded_file, temp_file)
             temp_file_path = temp_file.name
 
-        # Transcribe using the path to the temporary file
         result = model.transcribe(temp_file_path)
-        print(result["text"])
-
+        
+        # Load transcription text into docs
         with tempfile.NamedTemporaryFile(mode='w') as f:
             f.write(result["text"])
             f.flush()
             
             loader = TextLoader(f.name)
-            documents = loader.load()
+            docs.extend(loader.load())
 
-
-        text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-        docs = text_splitter.split_documents(documents)
-
-        db = FAISS.from_documents(docs, embeddings)
-
-        #faiss = FAISS.from_texts(result["text"], embeddings)
-
-
-        # Optionally delete the temporary file if you don't need it anymore
         os.remove(temp_file_path)
+
+    # Split docs and create database
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    docs = text_splitter.split_documents(docs)
+
+    db = FAISS.from_documents(docs, embeddings)
 
     return db
 
