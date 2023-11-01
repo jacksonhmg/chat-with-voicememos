@@ -31,10 +31,10 @@ if 'db' not in st.session_state:
 
 # Create the database only if memo files are uploaded and the database does not exist
 if memo_files and api_key and not st.session_state.db:
-    st.session_state.db = lch.create_vector_db_from_memos2(memo_files)
+    st.session_state.db = lch.create_vector_db_from_memos2(memo_files, st)
 
 # Query submission and response
 if query and st.session_state.db:
-    response = lch.get_response_from_query(st.session_state.db, query, api_key)
+    response = lch.get_response_from_query(st.session_state.db, query, api_key, st)
     st.subheader("Answer:")
     st.text(textwrap.fill(response, 80))

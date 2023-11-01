@@ -33,28 +33,21 @@ load_dotenv()
 
 embeddings = OpenAIEmbeddings()
 
+# ... (rest of the code above)
 
-# def create_vector_db_from_memos(memo_files) -> FAISS:
-#     model = whisper.load_model("base")
-
-#     for file in memo_files:
-#         result = model.transcribe(file)
-#         loader = TextLoader(file)
-#         transcript = loader.load()
-#         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-#         docs = text_splitter.split_documents(transcript)
-
-
-#     db = FAISS.from_documents(docs, embeddings)
-#     return db
-
-
-def create_vector_db_from_memos2(memo_files):
+def create_vector_db_from_memos2(memo_files, st):
 
     model = whisper.load_model("base")
     docs = []
+    
+    total_files = len(memo_files)
+    
+    # Progress bar initialization
+    progress_bar = st.progress(0)
+    status = st.empty()
+    status.text("Transcribing memos...")
 
-    for uploaded_file in memo_files:
+    for idx, uploaded_file in enumerate(memo_files):
 
         # Transcribe audio file
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as temp_file:
@@ -72,6 +65,9 @@ def create_vector_db_from_memos2(memo_files):
             docs.extend(loader.load())
 
         os.remove(temp_file_path)
+        
+        progress_value = (idx+1) / total_files
+        progress_bar.progress(progress_value)
 
     # Split docs and create database
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
@@ -82,12 +78,13 @@ def create_vector_db_from_memos2(memo_files):
     return db
 
 
+
 def create_document(text):
     return {"page_content": text}
 
 
 
-def get_response_from_query(db, query, openai_api_key, k=4):
+def get_response_from_query(db, query, openai_api_key, st):
     # text-danvinci can handle 4097 tokens
 
     docs = db.similarity_search(query)
@@ -104,9 +101,9 @@ def get_response_from_query(db, query, openai_api_key, k=4):
         
         Answer the following question: {question}
         By searching the following memos: {docs}
-                
-        If you feel like you don't have enough information to answer the question, say "I don't know".
-        
+
+        Be extremely descriptive. Even if there are only brief mentions of the answer in the memos, that is fine, still bring it up to the user.
+
         Your answers should be verbose and detailed.
         """,
     )
@@ -116,7 +113,10 @@ def get_response_from_query(db, query, openai_api_key, k=4):
     print("Query:", query)
     print("Docs:", docs_page_content)
 
+    st.text("Asking your question...")
     response = chain.run(question=query, docs=docs_page_content)
     response = response.replace("\n", "")
+
+    st.text("Response received!")
 
     return response
