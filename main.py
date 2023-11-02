@@ -3,51 +3,80 @@
 import streamlit as st
 import langchain_helper as lch
 import textwrap
+import streamlit_authenticator as stauth
+
+import yaml
+from yaml.loader import SafeLoader
+with open('./config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
 
 
-
-from dotenv import load_dotenv
-
-# Load environment variables from the .env file
-load_dotenv()
-import os
-import MySQLdb
-
-# Connect to the database
-connection = MySQLdb.connect(
-  host=os.getenv("DATABASE_HOST"),
-  user=os.getenv("DATABASE_USERNAME"),
-  passwd=os.getenv("DATABASE_PASSWORD"),
-  db=os.getenv("DATABASE"),
-  autocommit=True,
-  ssl_mode="VERIFY_IDENTITY",
-  # See https://planetscale.com/docs/concepts/secure-connections#ca-root-configuration
-  # to determine the path to your operating systems certificate file.
-  ssl={ "ca": "/etc/ssl/cert.pem" }
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['preauthorized']
 )
 
-try:
-    # Create a cursor to interact with the database
-    cursor = connection.cursor()
+name, authentication_status, username = authenticator.login('Login', 'main')
 
-    # Execute "SHOW TABLES" query
-    cursor.execute("SHOW TABLES")
 
-    # Fetch all the rows
-    tables = cursor.fetchall()
+if authentication_status:
+    authenticator.logout('Logout', 'main')
+    st.write(f'Welcome *{name}*')
+    st.title('Some content')
+elif authentication_status == False:
+    st.error('Username/password is incorrect')
+elif authentication_status == None:
+    st.warning('Please enter your username and password')
 
-    # Print out the tables
-    print("Tables in the database:")
-    for table in tables:
-        print(table[0])
 
-except MySQLdb.Error as e:
-    print("MySQL Error:", e)
 
-finally:
-    # Close the cursor and connection
-    cursor.close()
-    connection.close()
+## Code to connect to PlanetScale database
+
+# from dotenv import load_dotenv
+
+# # Load environment variables from the .env file
+# load_dotenv()
+# import os
+# import MySQLdb
+
+# # Connect to the database
+# connection = MySQLdb.connect(
+#   host=os.getenv("DATABASE_HOST"),
+#   user=os.getenv("DATABASE_USERNAME"),
+#   passwd=os.getenv("DATABASE_PASSWORD"),
+#   db=os.getenv("DATABASE"),
+#   autocommit=True,
+#   ssl_mode="VERIFY_IDENTITY",
+#   # See https://planetscale.com/docs/concepts/secure-connections#ca-root-configuration
+#   # to determine the path to your operating systems certificate file.
+#   ssl={ "ca": "/etc/ssl/cert.pem" }
+# )
+
+# try:
+#     # Create a cursor to interact with the database
+#     cursor = connection.cursor()
+
+#     # Execute "SHOW TABLES" query
+#     cursor.execute("SHOW TABLES")
+
+#     # Fetch all the rows
+#     tables = cursor.fetchall()
+
+#     # Print out the tables
+#     print("Tables in the database:")
+#     for table in tables:
+#         print(table[0])
+
+# except MySQLdb.Error as e:
+#     print("MySQL Error:", e)
+
+# finally:
+#     # Close the cursor and connection
+#     cursor.close()
+#     connection.close()
 
 
 
