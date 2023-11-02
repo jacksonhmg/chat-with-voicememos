@@ -4,7 +4,8 @@ import streamlit as st
 import langchain_helper as lch
 import textwrap
 
-st.title("Chat With Voice Memos")
+st.title("Chat With Voice Memos!")
+st.write("Airdrop your voice memos from your phone to macbook and upload them here")
 
 with st.sidebar:
     with st.form(key='my_form'):
